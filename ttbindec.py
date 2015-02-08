@@ -12,37 +12,57 @@ def ReprBytes(name, length):
     t.__repr__ = lambda self: "%s(unhexlify('%s'))"%(name, hexlify(self.raw))
     return t
 
-p = argparse.ArgumentParser()
-p.add_argument('ttbin', nargs='*', type=argparse.FileType('rb'), default=sys.stdin)
+def read_header(buf, offset=0, tag2struct=defs.tag2struct):
+    tag = ord(buf[offset])
+    fh = defs.FILE_HEADER.from_buffer_copy(buf, offset+1)
 
-data = open(sys.argv[1], "rb").read()
-offset = 0
+    # sanity checks
+    assert tag2struct[tag] == defs.FILE_HEADER
+    assert fh.file_version == 7
 
-tag = ord(data[offset])
-assert defs.tag2struct[tag] == defs.FILE_HEADER
-fh = defs.FILE_HEADER.from_buffer_copy(data, offset+1)
-assert fh.file_version == 7
-print "%08x %02x %s" % (offset, tag, fh)
-offset += 1 + ctypes.sizeof(defs.FILE_HEADER)
-for ii in range(fh.length_count):
-    rl = defs.RECORD_LENGTH.from_buffer_copy(data, offset)
-    if rl.tag not in defs.tag2struct:
-        defs.tag2struct[rl.tag] = ReprBytes("UNKNOWN_0x%02x"%rl.tag, rl.length-1)
-    struct = defs.tag2struct[rl.tag]
+    offset += 1 + ctypes.sizeof(defs.FILE_HEADER)
+    rls = []
+    for ii in range(fh.length_count):
+        rl = defs.RECORD_LENGTH.from_buffer_copy(buf, offset)
+        rls.append(rl)
 
-    assert ctypes.sizeof(struct)==rl.length - (struct is not defs.FILE_HEADER)
-    print "%08x %02x %s\t[ %s ]" % (offset, rl.tag, rl, struct.__name__)
-    offset += ctypes.sizeof(defs.RECORD_LENGTH)
+        if rl.tag not in tag2struct:
+            tag2struct[rl.tag] = ReprBytes("UNKNOWN_0x%02x"%rl.tag, rl.length-1)
+        struct = tag2struct[rl.tag]
 
-while offset < len(data):
-    tag = ord(data[offset])
-    struct = defs.tag2struct.get(tag)
-    # sanity checking
-    assert struct.__name__!='FILE_HEADER'
+        # check that our expected size of this structure matches what the RECORD_LENGTH says
+        assert ctypes.sizeof(struct)==rl.length - (struct is not defs.FILE_HEADER)
+        offset += ctypes.sizeof(defs.RECORD_LENGTH)
 
-    # display each record
-    record = struct.from_buffer_copy(data, offset+1)
-    print "%08x %02x %s" % (offset, tag, record)
-    offset += ctypes.sizeof(struct)+1
+    return tag, fh, rls, offset
 
-assert offset==len(data)
+def read_record(buf, offset, tag2struct=defs.tag2struct):
+    tag = ord(buf[offset])
+    struct = tag2struct[tag]
+    assert struct != defs.FILE_HEADER
+    record = struct.from_buffer_copy(buf, offset+1)
+    offset += 1 + ctypes.sizeof(struct)
+    return tag, record, offset
+
+#####
+
+if __name__=='__main__':
+    p = argparse.ArgumentParser()
+    p.add_argument('ttbin', nargs='*', type=argparse.FileType('rb'), default=sys.stdin)
+    args = p.parse_args()
+
+    for ttbin in args.ttbin:
+        data = ttbin.read()
+
+        tag, fh, rls, offset = read_header(data, 0)
+
+        print "%08x %02x %s" % (0, tag, fh)
+        for rl in rls:
+            print "-------- %02x %s\t[ %s ]" % (rl.tag, rl, defs.tag2struct[rl.tag].__name__)
+
+        while offset < len(data):
+            tag, record, new_offset = read_record(data, offset)
+            print "%08x %02x %s" % (offset, tag, record)
+            offset = new_offset
+
+        assert offset==len(data)
