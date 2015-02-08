@@ -19,6 +19,13 @@ immediately follows the tag byte).
 Decodes the contents of a .ttbin file (currently *only* supports `file_version=7`
 as produced by watch firmware v1.8.25.
 
+    ttbin_summary.py ActivityFile.ttbin
+
+Prints a brief summary of the contents of a .ttbin file, and can
+reverse-geocode them to get approximate starting location using Google
+Maps API. Can also rename files to a naturally-sorting name format
+(`YYYY-MM-DDTHH:MM:SS_Activity_Duration.ttbin`).
+
     ttbin_scrape_defs.py # defaults to current directory, defs.py
     ttbin_scrape_defs.py --help
 
