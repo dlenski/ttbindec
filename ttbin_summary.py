@@ -39,7 +39,8 @@ for ttbin in args.ttbin:
             distance = rec.distance
             duration = "%02d:%02d:%02d" % (rec.duration//3600, (rec.duration//60)%60, rec.duration%60)
         elif fp is None and isinstance(rec, defs.FILE_GPS_RECORD):
-            fp = "%g,%g" % (rec.latitude/1e7, rec.longitude/1e7)
+            lat, long = "%08.d"%rec.latitude, "%08.d"%rec.longitude
+            fp = "%s.%s,%s.%s" % (lat[:-7],lat[-7:],long[:-7],long[-7:])
 
     print indent+"Device: %s, firmware v%s" % (product, fw)
     print indent+"Activity: %s" % activity
