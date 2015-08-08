@@ -1,0 +1,10 @@
+#ttbin
+0        byte    0x20
+>1       leshort 0x0007
+>>0x76   byte    0x20
+>>>0x77  leshort 0x0075 TomTom activity file, v7
+>>>>8    leldate x (%s,
+>>>>3    byte    x device firmware %d.
+>>>>4    byte    x \b%d.
+>>>>5    byte    x \b%d,
+>>>>6    leshort x product ID %04d)

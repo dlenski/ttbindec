@@ -12,6 +12,17 @@ format, which consists of a series of records introduced by one-byte
 tags (e.g. tag `0x20` indicates the file-header record, which
 immediately follows the tag byte).
 
+# ttbin-magic
+
+The file [`ttbin-magic`](ttbin-magic) can be added to your `~/.magic` file to help
+[`file(1)`](http://en.wikipedia.org/wiki/File_%28command%29) identify
+TTBIN files (version 7 only):
+
+```sh
+$ file *.ttbin
+0x00910000_20150807_123616.ttbin:     TomTom activity file, v7 (Fri Aug  7 11:49:22 2015, device firmware 1.8.42, product ID 1001)
+```
+
 ## Usage
 
     ttbindec.py ActivityFile.ttbin
