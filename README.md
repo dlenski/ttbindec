@@ -1,3 +1,12 @@
+
+Table of Contents
+=================
+
+  * [TTBIN Decoder](#ttbin-decoder)
+    * [Usage](#usage)
+    * [Unknown record types](#unknown-record-types)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 # TTBIN Decoder
 
 This is a utility to help delve into the details of the TTBIN file
@@ -12,38 +21,49 @@ format, which consists of a series of records introduced by one-byte
 tags (e.g. tag `0x20` indicates the file-header record, which
 immediately follows the tag byte).
 
-# ttbin-magic
-
-The file [`ttbin-magic`](ttbin-magic) can be added to your `~/.magic` file to help
-[`file(1)`](http://en.wikipedia.org/wiki/File_%28command%29) identify
-TTBIN files (version 7 only):
-
-```sh
-$ file *.ttbin
-0x00910000_20150807_123616.ttbin:     TomTom activity file, v7 (Fri Aug  7 11:49:22 2015, device firmware 1.8.42, product ID 1001)
-```
-
 ## Usage
 
-    ttbindec.py ActivityFile.ttbin
+```
+$ ttbindec.py ActivityFile.ttbin
+```
 
-Decodes the contents of a .ttbin file (currently *only* supports `file_version=7`
-as produced by watch firmware v1.8.25.
+Decodes the contents of a .ttbin file (currently *only* supports `file_version=7`,
+as produced by recent watch firmware versions such as v1.8.25 or v1.8.42).
 
-    ttbin_summary.py ActivityFile.ttbin
+In the case of corrupt files, it will make a very great effort to skip
+over junk and label it in the output (**this is the reason why I
+originally wrote this tool**)!
+
+```
+$ ttbin_summary.py ActivityFile.ttbin
+```
 
 Prints a brief summary of the contents of a .ttbin file, and can
 reverse-geocode them to get approximate starting location using Google
 Maps API. Can also rename files to a naturally-sorting name format
+with the `--rename`/`-r` option
 (`YYYY-MM-DDTHH:MM:SS_Activity_Duration.ttbin`).
 
-    ttbin_scrape_defs.py # defaults to current directory, defs.py
-    ttbin_scrape_defs.py --help
+```
+$ ttbin_scrape_defs.py # defaults to current directory, defs.py
+$ ttbin_scrape_defs.py --help
+```
 
 Regenerates `defs.py`, which contains the definitions for the various
 in-file structures, required by `ttbindec.py`. This program scrapes
 `ttwatch/ttbin/ttbin.c` and `ttwatch/ttbin/ttbin.h` to obtain the
 definitions.
+
+If you append the file [`ttbin-magic`](ttbin-magic) to `~/.magic`, the
+[`file(1)`](http://en.wikipedia.org/wiki/File_%28command%29) utility
+will be able to identify TTBIN files (version 7 only) and their basic
+details:
+
+```sh
+$ cat ttbin-magic >> ~/.magic         # only needs to be done once!
+$ file *.ttbin
+0x00910000_20150807_123616.ttbin:     TomTom activity file, v7 (Fri Aug  7 11:49:22 2015, device firmware 1.8.42, product ID 1001)
+```
 
 ## Unknown record types
 
