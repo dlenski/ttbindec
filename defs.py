@@ -262,6 +262,10 @@ class FILE_WHEEL_SIZE_RECORD(StructReprMixin, LittleEndianStructure):
         ('wheel_size',c_uint32), # millimetres
     )
 
+class FILE_INVALID(StructReprMixin, LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = ()
+
 #####
 # Tag to structure map
 #####

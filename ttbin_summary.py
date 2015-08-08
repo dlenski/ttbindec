@@ -31,7 +31,10 @@ for ttbin in args.ttbin:
     while offset<len(data):
         tag, rec, offset = ttbindec.read_record(data, offset)
         if isinstance(rec, defs.FILE_STATUS_RECORD):
-            activity = defs.C_ACTIVITY(rec.activity).name.title()
+            try:
+                activity = defs.C_ACTIVITY(rec.activity).name.title()
+            except ValueError:
+                activity = None
             end_time = datetime.datetime.fromtimestamp(rec.timestamp-fh.local_time_offset)
         elif isinstance(rec, defs.FILE_LAP_RECORD):
             laps += 1

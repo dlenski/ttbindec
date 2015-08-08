@@ -38,11 +38,35 @@ def read_header(buf, offset=0, tag2struct=defs.tag2struct):
 
 def read_record(buf, offset, tag2struct=defs.tag2struct):
     tag = ord(buf[offset])
-    struct = tag2struct[tag]
-    assert struct != defs.FILE_HEADER
-    record = struct.from_buffer_copy(buf, offset+1)
-    offset += 1 + ctypes.sizeof(struct)
-    return tag, record, offset
+    if tag in tag2struct and tag!=32 and offset+1+ctypes.sizeof(tag2struct[tag])<=len(buf):
+        struct = tag2struct[tag]
+        assert struct != defs.FILE_HEADER
+        record = struct.from_buffer_copy(buf, offset+1)
+        offset += 1 + ctypes.sizeof(struct)
+        return tag, record, offset
+    else:
+        junkstart, junkend = offset, None
+        while offset<len(buf):
+            tag1, tag2 = ord(buf[offset]), None
+            if tag1 in tag2struct and tag1!=32 and offset+1+ctypes.sizeof(tag2struct[tag1])<=len(buf):
+                #print>>sys.stderr, "tag1 0x%02x at offset 0x%04x" % (tag1, offset)
+                struct1 = tag2struct[tag1]
+                tag2 = ord(buf[offset+1+ctypes.sizeof(struct1)])
+                if tag2 in tag2struct and tag2!=32:
+                    junkend = offset
+            if junkend is not None:
+                tag, struct = tag1, struct1
+                #print>>sys.stderr, "Tag 0x%02x at offset 0x%04x, preceded by junk: %s" % (tag, offset, hexlify(buf[junkstart:junkend]))
+                #print "Tag 0x%02x at offset 0x%04x, preceded by junk: %s" % (tag, offset, hexlify(buf[junkstart:junkend]))
+                break
+            offset += 1
+        else:
+            junkend = len(buf)
+            #print>>sys.stderr, "File ends with junk: %s" % (hexlify(buf[junkstart:junkend]))
+
+        struct = ReprBytes("SUSPECTED_JUNK", junkend-junkstart)
+        record = struct.from_buffer_copy(buf, junkstart)
+        return None, record, offset
 
 #####
 
@@ -62,7 +86,7 @@ if __name__=='__main__':
 
         while offset < len(data):
             tag, record, new_offset = read_record(data, offset)
-            print "%08x %02x %s" % (offset, tag, record)
+            print "%08x %s %s" % (offset, '__' if tag is None else ("%02x"%tag), record)
             offset = new_offset
 
         assert offset==len(data)
